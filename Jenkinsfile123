@@ -1,31 +1,86 @@
 pipeline {
     agent any
     
-    tools { maven 'maven3.6'
-            jdk 'jdk11'
-            
+    tools {
+        
+        maven 'maven3'
+        jdk 'jdk17'
+        
     }
-
+            
+    environment {
+        SCANNER_HOME=tool 'sonar-scanner'
+    }
     stages {
-        stage('git checkout') {
+        stage('gitcheckout') {
             steps {
-                git branch: 'main', url: 'https://github.com/jaiswaladi246/Ekart.git'
+                git branch: 'main', url: 'https://github.com/shehmil/Ekart.git'
             }
         }
         
-        stage('Compile') {
+        stage('compile') {
             steps {
-                sh "mvn compile"
+            sh "mvn compile"
+            
+            }
+        }
+        
+        stage('unittest ') {
+            steps {
+                sh "mvn test -DskipTests=true"
+            }
+        }
+        
+        stage('sonarqube') {
+            steps {
+               withSonarQubeEnv('sonar') 
+               {
+                   
+                  sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=EKART  -Dsonar.projectKey=EKART \
+                           -Dsonar.java.binaries=.   '''
+                    
+                   
+                   
+
+            }
+        }
+        }
+        
+        // stage('Depentency check') {
+        //     steps {
+        //         dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC'
+        //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                 
+                
+                 
+        //     }
+        // }
+        
+        
+        stage('build mvn') {
+            steps {
+               sh "mvn clean package -DskipTests=true" 
             }
         }
         
-        stage('Hello') {
+        
+        stage('artifact to nexus') {
+            steps {
+                withMaven(globalMavenSettingsConfig: 'global-maven', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
+               
+               sh "mvn deploy -DskipTests=true" 
+}
+            }
+        }
+        
+        
+         stage('Hello2') {
             steps {
                 echo 'Hello World'
             }
         }
         
         
+        
+        }
     }
-}
