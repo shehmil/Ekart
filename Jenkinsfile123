@@ -46,15 +46,15 @@ pipeline {
         }
         }
         
-        // stage('Depentency check') {
-        //     steps {
-        //         dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC'
-        //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+       stage('Depentency check') {
+          steps {
+              dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC'
+              dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                 
                 
                  
-        //     }
-        // }
+           }
+      }
         
         
         stage('build mvn') {
@@ -74,13 +74,38 @@ pipeline {
         }
         
         
-         stage('Hello2') {
+         stage('docker build ') {
             steps {
-                echo 'Hello World'
+                script{
+                 withDockerRegistry(credentialsId: 'dockerusername-passwd', toolName: 'docker') {
+
+                sh "docker build -t  shehmil/ekart:latest -f docker/Dockerfile ."    
+        }
+            }
+            }
+         }
+        
+        
+        
+              stage('trivy scan') {
+            steps {
+            sh "trivy image shehmil/ekart:latest > trivysc.txt "
+            
+            }
+      
+              }
+         stage('dockerimg   push') {
+            steps {
+                script{
+                 withDockerRegistry(credentialsId: 'dockerusername-passwd', toolName: 'docker') {
+
+                sh "docker push shehmil/ekart:latest "    
+        }
             }
         }
         
+      }
+               
         
-        
-        }
+    }
     }
